@@ -3,8 +3,11 @@ package vgcairo
 import (
 	"fmt"
 	"image/color"
+	"image/jpeg"
 	"math"
+	"net/http"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/diamondburned/gotk4/pkg/cairo"
@@ -18,28 +21,29 @@ func TestPNG(t *testing.T) {
 	const w = 1000
 	const h = 1000
 
+	runTest := func(t *testing.T, p *plot.Plot) {
+		surface := cairo.CreateImageSurface(cairo.FORMAT_ARGB32, w, h)
+		c := NewCanvas(cairo.Create(surface))
+
+		canvas := draw.NewCanvas(c, w, h)
+		p.Draw(canvas)
+
+		if testing.Verbose() {
+			surface.WriteToPNG(tmpPNG(t, path.Base(t.Name())))
+		}
+	}
+
 	t.Run("simple", func(t *testing.T) {
-		surface := cairo.CreateImageSurface(cairo.FORMAT_ARGB32, w, h)
-		c := NewCanvas(cairo.Create(surface))
-
-		p := newSimplePlot()
-		p.Draw(draw.NewCanvas(c, w, h))
-
-		if testing.Verbose() {
-			surface.WriteToPNG(tmpPNG(t, "simple"))
-		}
+		runTest(t, newSimplePlot())
 	})
-
 	t.Run("labels", func(t *testing.T) {
-		surface := cairo.CreateImageSurface(cairo.FORMAT_ARGB32, w, h)
-		c := NewCanvas(cairo.Create(surface))
-
-		p := newLabelsPlot(t)
-		p.Draw(draw.NewCanvas(c, w, h))
-
-		if testing.Verbose() {
-			surface.WriteToPNG(tmpPNG(t, "labels"))
-		}
+		runTest(t, newLabelsPlot(t))
+	})
+	t.Run("image", func(t *testing.T) {
+		runTest(t, newImagePlot(t))
+	})
+	t.Run("sparklines", func(t *testing.T) {
+		runTest(t, newSparkline())
 	})
 }
 
@@ -60,6 +64,50 @@ func tmpPNG(t *testing.T, suffix string) string {
 	})
 
 	return f.Name()
+}
+
+func newSparkline() *plot.Plot {
+	sin := plotter.NewFunction(func(x float64) float64 { return math.Sin(x) })
+	sin.Samples = 100
+	sin.Width = vg.Points(8)
+	sin.Color = color.RGBA{247, 168, 184, 255}
+
+	p := plot.New()
+	p.HideAxes()
+	p.BackgroundColor = color.Transparent
+	p.X.Padding = 0
+	p.Y.Padding = 0
+
+	p.X.Min = 0
+	p.X.Max = 2 * math.Pi
+	p.Y.Min = -1
+	p.Y.Max = +1
+
+	p.Add(sin)
+
+	return p
+}
+
+func newImagePlot(t *testing.T) *plot.Plot {
+	const imageURL = "https://upload.wikimedia.org/wikipedia/commons/d/d9/Cairo-Nile-2020%281%29.jpg"
+
+	r, err := http.Get(imageURL)
+	if err != nil {
+		t.Skip("cannot get Cairo-Nile JPEG:", err)
+	}
+	defer r.Body.Close()
+
+	i, err := jpeg.Decode(r.Body)
+	if err != nil {
+		t.Skip("cannot decode Cairo-Nile JPEG:", err)
+	}
+	r.Body.Close()
+
+	p := plot.New()
+	p.Add(plotter.NewImage(i, 0, 0, 400, 400))
+	p.Add(plotter.NewGrid())
+
+	return p
 }
 
 // https://github.com/gonum/plot/blob/v0.10.0/vg/vggio/vggio_example_test.go

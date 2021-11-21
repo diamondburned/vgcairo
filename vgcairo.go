@@ -20,22 +20,22 @@ type Canvas struct {
 var _ vg.Canvas = (*Canvas)(nil)
 
 // NewCanvas returns a new Cairo Canvas.
-func NewCanvas(t *cairo.Context) *Canvas {
-	return &Canvas{t: t}
+func NewCanvas(t *cairo.Context) Canvas {
+	return Canvas{t: t}
 }
 
 // Context returns the Canvas' cairo.Context.
-func (c *Canvas) Context() *cairo.Context {
+func (c Canvas) Context() *cairo.Context {
 	return c.t
 }
 
 // SetLineWidth implements vg.Canvas.
-func (c *Canvas) SetLineWidth(l vg.Length) {
+func (c Canvas) SetLineWidth(l vg.Length) {
 	c.t.SetLineWidth(float64(l))
 }
 
 // SetLineDash implements vg.Canvas.
-func (c *Canvas) SetLineDash(pattern []vg.Length, offset vg.Length) {
+func (c Canvas) SetLineDash(pattern []vg.Length, offset vg.Length) {
 	// TODO: probably optimize this.
 	dashes := make([]float64, len(pattern))
 	for i, dash := range pattern {
@@ -45,7 +45,7 @@ func (c *Canvas) SetLineDash(pattern []vg.Length, offset vg.Length) {
 }
 
 // SetColor implements vg.Canvas.
-func (c *Canvas) SetColor(clr color.Color) {
+func (c Canvas) SetColor(clr color.Color) {
 	if clr == nil {
 		clr = color.Black
 	}
@@ -60,32 +60,32 @@ func (c *Canvas) SetColor(clr color.Color) {
 }
 
 // Rotate implements vg.Canvas.
-func (c *Canvas) Rotate(rad float64) {
+func (c Canvas) Rotate(rad float64) {
 	c.t.Rotate(rad)
 }
 
 // Translate implements vg.Canvas.
-func (c *Canvas) Translate(pt vg.Point) {
+func (c Canvas) Translate(pt vg.Point) {
 	c.t.Translate(float64(pt.X), float64(pt.Y))
 }
 
 // Scale implements vg.Canvas.
-func (c *Canvas) Scale(x, y float64) {
+func (c Canvas) Scale(x, y float64) {
 	c.t.Scale(x, y)
 }
 
 // Push implements vg.Canvas.
-func (c *Canvas) Push() {
+func (c Canvas) Push() {
 	c.t.Save()
 }
 
 // Pop implements vg.Canvas.
-func (c *Canvas) Pop() {
+func (c Canvas) Pop() {
 	c.t.Restore()
 }
 
 // Fill implements vg.Canvas.
-func (c *Canvas) Fill(path vg.Path) {
+func (c Canvas) Fill(path vg.Path) {
 	c.t.Save()
 	c.outline(path)
 	c.t.Fill()
@@ -93,14 +93,14 @@ func (c *Canvas) Fill(path vg.Path) {
 }
 
 // Stroke implements vg.Canvas.
-func (c *Canvas) Stroke(path vg.Path) {
+func (c Canvas) Stroke(path vg.Path) {
 	c.t.Save()
 	c.outline(path)
 	c.t.Stroke()
 	c.t.Restore()
 }
 
-func (c *Canvas) outline(path vg.Path) {
+func (c Canvas) outline(path vg.Path) {
 	c.t.NewPath()
 
 	for _, comp := range path {
@@ -137,7 +137,7 @@ func (c *Canvas) outline(path vg.Path) {
 }
 
 // FillString implements vg.Canvas.
-func (c *Canvas) FillString(f font.Face, pt vg.Point, text string) {
+func (c Canvas) FillString(f font.Face, pt vg.Point, text string) {
 	weight := cairo.FONT_WEIGHT_NORMAL
 	switch f.Font.Weight {
 	case xfont.WeightSemiBold, xfont.WeightBold, xfont.WeightExtraBold, xfont.WeightBlack:
@@ -151,7 +151,27 @@ func (c *Canvas) FillString(f font.Face, pt vg.Point, text string) {
 	c.t.Restore()
 }
 
-// DrawImage does nothing.
-func (c *Canvas) DrawImage(rect vg.Rectangle, img image.Image) {
-	return
+// DrawImage implements vg.Canvas.
+func (c Canvas) DrawImage(rect vg.Rectangle, img image.Image) {
+	rectSz := rect.Size()
+	imagSz := img.Bounds().Size()
+
+	surface := cairo.CreateSurfaceFromImage(img)
+
+	c.t.Save()
+	defer c.t.Restore()
+
+	if !vgPtEq(rectSz, imagSz) {
+		c.t.Scale(
+			float64(rectSz.X)/float64(imagSz.X),
+			float64(rectSz.Y)/float64(imagSz.Y),
+		)
+	}
+
+	c.t.SetSourceSurface(surface, rect.Min.X.Points(), rect.Min.Y.Points())
+	c.t.Paint()
+}
+
+func vgPtEq(pt1 vg.Point, pt2 image.Point) bool {
+	return int(pt1.X) == pt2.X && int(pt1.Y) == pt2.Y
 }
