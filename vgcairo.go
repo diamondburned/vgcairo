@@ -6,6 +6,7 @@ import (
 	"image/color"
 
 	"github.com/diamondburned/gotk4/pkg/cairo"
+	"github.com/diamondburned/vgcairo/internal/bezier"
 	"gonum.org/v1/plot/font"
 	"gonum.org/v1/plot/vg"
 
@@ -113,20 +114,10 @@ func (c Canvas) outline(path vg.Path) {
 			c.t.Arc(float64(comp.Pos.X), float64(comp.Pos.Y), float64(comp.Radius.Points()), comp.Start, comp.Angle)
 		case vg.CurveComp:
 			switch len(comp.Control) {
-			case 1: // quadratic
-				c.t.CurveTo(
-					float64(comp.Control[0].X), float64(comp.Control[0].Y),
-					// https://bugs.launchpad.net/inkscape/+bug/1009765/comments/1
-					// http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
-					float64(2*comp.Control[0].X+comp.Pos.X)/3, float64(2*comp.Control[0].Y+comp.Pos.Y)/3,
-					float64(comp.Pos.X), float64(comp.Pos.Y),
-				)
-			case 2: // cubic
-				c.t.CurveTo(
-					float64(comp.Control[0].X), float64(comp.Control[0].Y),
-					float64(comp.Control[1].X), float64(comp.Control[1].Y),
-					float64(comp.Pos.X), float64(comp.Pos.Y),
-				)
+			case 1:
+				bezier.Quadratic(c.t, comp.Control[0], comp.Pos)
+			case 2:
+				bezier.Cubic(c.t, comp.Control[0], comp.Control[1], comp.Pos)
 			default:
 				panic("vgcairo: invalid number of control points")
 			}
