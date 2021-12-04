@@ -3,7 +3,7 @@ module github.com/diamondburned/vgcairo
 go 1.17
 
 require (
-	github.com/diamondburned/gotk4/pkg v0.0.0-20211121034925-b429b945ab5d
+	github.com/diamondburned/gotk4/pkg v0.0.0-20211204064117-3a5ef1146568
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d
 	gonum.org/v1/plot v0.10.0
 )
