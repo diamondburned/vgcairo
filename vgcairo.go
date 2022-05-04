@@ -48,7 +48,7 @@ func (c Canvas) SetLineDash(pattern []vg.Length, offset vg.Length) {
 // SetColor implements vg.Canvas.
 func (c Canvas) SetColor(clr color.Color) {
 	if clr == nil {
-		clr = color.Black
+		return
 	}
 
 	r, g, b, a := clr.RGBA()
