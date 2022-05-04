@@ -13,6 +13,25 @@ import (
 	xfont "golang.org/x/image/font"
 )
 
+// ColorSurface is a type that implements all of color.Color's methods and wraps
+// around a cairo.Surface. This is useful for SetColor.
+//
+// Note that calling RGBA on the returned color will always return a transparent
+// color.
+func ColorSurface(surface *cairo.Surface, x, y float64) color.Color {
+	return colorSurface{surface, x, y}
+}
+
+type colorSurface struct {
+	s *cairo.Surface
+	x float64
+	y float64
+}
+
+func (s colorSurface) RGBA() (r, g, b, a uint32) {
+	return 0, 0, 0, 0
+}
+
 // Canvas implements the vg.Canvas interface, drawing to a cairo.Context.
 type Canvas struct {
 	t *cairo.Context
@@ -47,17 +66,18 @@ func (c Canvas) SetLineDash(pattern []vg.Length, offset vg.Length) {
 
 // SetColor implements vg.Canvas.
 func (c Canvas) SetColor(clr color.Color) {
-	if clr == nil {
-		return
+	switch clr := clr.(type) {
+	case colorSurface:
+		c.t.SetSourceSurface(clr.s, clr.x, clr.y)
+	default:
+		r, g, b, a := clr.RGBA()
+		c.t.SetSourceRGBA(
+			float64(r)/0xFFFF,
+			float64(g)/0xFFFF,
+			float64(b)/0xFFFF,
+			float64(a)/0xFFFF,
+		)
 	}
-
-	r, g, b, a := clr.RGBA()
-	c.t.SetSourceRGBA(
-		float64(r)/0xFFFF,
-		float64(g)/0xFFFF,
-		float64(b)/0xFFFF,
-		float64(a)/0xFFFF,
-	)
 }
 
 // Rotate implements vg.Canvas.
