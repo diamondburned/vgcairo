@@ -25,7 +25,7 @@ func (pt point) Mult(pt1 point) point {
 
 // Quadratic draws a quadratic bezier curve into the given Cairo context.
 func Quadratic(t *cairo.Context, p1, pt vg.Point) {
-	cx, cy := t.GetCurrentPoint()
+	cx, cy := t.CurrentPoint()
 
 	// https://stackoverflow.com/a/55034115
 

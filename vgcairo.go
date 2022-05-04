@@ -129,14 +129,14 @@ func (c Canvas) outline(path vg.Path) {
 
 // FillString implements vg.Canvas.
 func (c Canvas) FillString(f font.Face, pt vg.Point, text string) {
-	weight := cairo.FONT_WEIGHT_NORMAL
+	weight := cairo.FontWeightNormal
 	switch f.Font.Weight {
 	case xfont.WeightSemiBold, xfont.WeightBold, xfont.WeightExtraBold, xfont.WeightBlack:
-		weight = cairo.FONT_WEIGHT_BOLD
+		weight = cairo.FontWeightBold
 	}
 
 	c.t.Save()
-	c.t.SelectFontFace(string(f.Font.Typeface), cairo.FONT_SLANT_NORMAL, weight)
+	c.t.SelectFontFace(string(f.Font.Typeface), cairo.FontSlantNormal, weight)
 	c.t.MoveTo(float64(pt.X), float64(pt.Y))
 	c.t.ShowText(text)
 	c.t.Restore()
