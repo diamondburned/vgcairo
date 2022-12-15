@@ -3,8 +3,8 @@
 let gotk4-nix = pkgs.fetchFromGitHub {
 		owner = "diamondburned";
 		repo  = "gotk4-nix";
-		rev   = "b5bb50b31ffd7202decfdb8e84a35cbe88d42c64";
-		hash  = "sha256:18wxf24shsra5y5hdbxqcwaf3abhvx1xla8k0vnnkrwz0r9n4iqq";
+		rev   = "2c031f93638f8c97a298807df80424f68ffaac76";
+		hash  = "sha256:0lpbnbzl1sc684ypf6ba5f8jnj6sd8z8ajs0pa2sqi8j9w0c87b0";
 	};
 
 in import "${gotk4-nix}/shell.nix" {
